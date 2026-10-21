@@ -1,0 +1,17 @@
+% Terjemahan Indonesia untuk apacite (dasar: english.apc)
+\ProvidesFile{indonesian.apc}[2026/10/21 Indonesian language file for apacite]
+\input{english.apc}
+\renewcommand{\BBAA}{dan}%
+\renewcommand{\BBAB}{dan}%
+\renewcommand{\BAnd}{dan}%
+\renewcommand{\BOthers}[1]{dkk.\hbox{}}%
+\renewcommand{\BOthersPeriod}[1]{dkk.\hbox{}}%
+\renewcommand{\BIn}{Dalam}%
+\renewcommand{\BED}{penyunting}%
+\renewcommand{\BEDS}{penyunting}%
+\renewcommand{\BVOL}{Vol.\hbox{}}%
+\renewcommand{\BNUM}{No.\hbox{}}%
+\renewcommand{\BPG}{hal.\hbox{}}%
+\renewcommand{\BPGS}{hal.\hbox{}}%
+\renewcommand{\BRetrievedFrom}{Diakses dari\ }%
+\endinput

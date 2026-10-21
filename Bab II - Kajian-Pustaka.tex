@@ -1,0 +1,177 @@
+\chapter{KAJIAN PUSTAKA}
+\label{chap:kajian-pustaka}
+% Target bab: sekitar 10 halaman. Teks dalam lingkungan petunjuk adalah panduan isi; ganti dengan tulisan sendiri.
+
+% ---- Paragraf pembuka (0,25 hlm) ----
+\begin{petunjuk}
+Jelaskan bahwa bab ini membahas dasar teori dan penelitian terkait, lalu sebut urutan subbab.
+\end{petunjuk}
+
+% =====================================================================
+\section{\textit{SQL Injection} dan \textit{Taint Analysis}} % 2 hlm
+\label{sec:sqli-taint}
+
+\subsection{\textit{SQL Injection} sebagai Kerentanan Aliran Data}
+\label{sec:sqli-aliran-data}
+\begin{petunjuk}
+Mekanisme singkat dan contoh kode Java yang rentan (\texttt{Statement.executeQuery} dengan \textit{string concatenation}), misalnya Listing~\ref{lst:sqli-rentan}.
+\end{petunjuk}
+
+\begin{lstlisting}[caption={Contoh kode Java yang rentan terhadap \textit{SQL injection}}, label={lst:sqli-rentan}]
+String id = request.getParameter("id");
+Statement stmt = conn.createStatement();
+ResultSet rs = stmt.executeQuery(
+    "SELECT * FROM users WHERE id = '" + id + "'");
+\end{lstlisting}
+
+\subsection{Konsep \textit{Taint Analysis}}
+\label{sec:konsep-taint}
+\begin{petunjuk}
+\textit{Source}, \textit{sink}, \textit{sanitizer}, propagasi, dan definisi \textit{taint-flow path}.
+\end{petunjuk}
+
+\subsection{Representasi Kode dan Perangkat Analisis}
+\label{sec:representasi-kode-tool}
+\begin{petunjuk}
+AST/CFG/CPG sekilas (hanya yang dipakai \textit{tool}), Joern/CodeQL, dan alasan pemilihan \textit{tool}.
+\end{petunjuk}
+
+\subsection{Keterbatasan \textit{Taint Analysis} sebagai \textit{Ground Truth}}
+\label{sec:batas-taint}
+\begin{petunjuk}
+\textit{False positive}/\textit{negative}, dan hanya menangkap sebagian alasan kerentanan.
+\end{petunjuk}
+
+% =====================================================================
+\section{Deteksi Kerentanan Berbasis \textit{Machine Learning}} % 1 hlm
+\label{sec:deteksi-ml}
+
+\subsection{Representasi Kode untuk Model ML}
+\label{sec:representasi-ml}
+\begin{petunjuk}
+\textit{Token} vs graf, dan mana yang dipakai.
+\end{petunjuk}
+
+\subsection{Model Detektor}
+\label{sec:model-detektor}
+\begin{petunjuk}
+Model yang dipilih (misal CodeBERT) dan alasannya.
+\end{petunjuk}
+
+\subsection{\textit{Dataset} Kerentanan Java}
+\label{sec:dataset}
+\begin{petunjuk}
+Juliet/SARD, OWASP Benchmark, dsb. Label SQLi, keterbatasan, dan metrik performa model (F1, dll.).
+\end{petunjuk}
+
+% =====================================================================
+\section{\textit{Explainable AI} untuk Model Kode} % 2 hlm
+\label{sec:xai}
+
+\subsection{Konsep Dasar XAI}
+\label{sec:konsep-xai}
+\begin{petunjuk}
+\textit{Black box}, \textit{post-hoc} vs \textit{intrinsic}, \textit{local} vs \textit{global}.
+\end{petunjuk}
+
+\subsection{SHAP}
+\label{sec:shap}
+\begin{petunjuk}
+Nilai Shapley, cara kerja, kelebihan, dan kelemahan.
+\end{petunjuk}
+
+\subsection{LIME}
+\label{sec:lime}
+\begin{petunjuk}
+\textit{Surrogate} lokal berbasis perturbasi, kelebihan, dan kelemahan.
+\end{petunjuk}
+
+\subsection{\textit{Attention} sebagai Penjelasan}
+\label{sec:attention}
+\begin{petunjuk}
+Cara kerja di \textit{Transformer} dan perdebatan ``\textit{attention} bukan penjelasan''.
+\end{petunjuk}
+
+\subsection{Penjelasan pada Level \textit{Token} untuk Kode}
+\label{sec:xai-token}
+\begin{petunjuk}
+Bagaimana ketiga metode menghasilkan skor per \textit{token} (jembatan ke masalah pemetaan di Subbab~\ref{sec:evaluasi-xai}).
+\end{petunjuk}
+
+% =====================================================================
+\section{Evaluasi Penjelasan XAI} % 2,5 hlm
+\label{sec:evaluasi-xai}
+
+\subsection{\textit{Faithfulness} dan \textit{Plausibility}}
+\label{sec:faithfulness}
+\begin{petunjuk}
+\textit{Comprehensiveness}, \textit{sufficiency}; kenapa penjelasan yang tampak masuk akal belum tentu setia pada model (motivasi riset).
+\end{petunjuk}
+
+\subsection{Konsistensi dan Stabilitas}
+\label{sec:stabilitas}
+\begin{petunjuk}
+Kestabilan penjelasan terhadap perubahan input yang tidak mengubah semantik.
+\end{petunjuk}
+
+\subsection{Evaluasi Berbasis \textit{Ground Truth}}
+\label{sec:eval-ground-truth}
+\begin{petunjuk}
+ERASER dan \textit{rationale} manusia vs \textit{taint-flow} yang deterministik.
+\end{petunjuk}
+
+\subsection{Evaluasi Penjelasan pada Kode}
+\label{sec:eval-kode}
+\begin{petunjuk}
+Level \textit{token}, baris, \textit{statement}; masalah pemetaan skor \textit{token} ke \textit{taint path}.
+\end{petunjuk}
+
+\subsection{Keterbatasan Metrik yang Ada untuk Domain Kode}
+\label{sec:batas-metrik}
+
+% =====================================================================
+\section{Penelitian Terkait dan Celah Penelitian} % 2,25 hlm
+\label{sec:penelitian-terkait}
+
+\subsection{XAI untuk Deteksi Kerentanan Kode}
+\label{sec:xai-vuln}
+\begin{petunjuk}
+Karya terdekat: apa yang dijelaskan dan bagaimana dievaluasi.
+\end{petunjuk}
+
+\subsection{Tabel Perbandingan Penelitian Terkait}
+\label{sec:tabel-perbandingan}
+\begin{petunjuk}
+Bandingkan 5--8 karya, seperti pada Tabel~\ref{tab:perbandingan}.
+\end{petunjuk}
+
+\begin{table}[htbp]
+  \caption{Perbandingan penelitian terkait}
+  \label{tab:perbandingan}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{|p{2.2cm}|p{0.9cm}|p{1.9cm}|p{1.3cm}|p{1.5cm}|p{1.9cm}|p{2.5cm}|}
+    \hline
+    \textbf{Judul} & \textbf{Tahun} & \textbf{Bahasa/\newline Kerentanan} & \textbf{Model} & \textbf{Metode\newline XAI} & \textbf{Metrik\newline Evaluasi} & \textbf{Keterbatasan} \\
+    \hline
+    & & & & & & \\ \hline
+    & & & & & & \\ \hline
+    & & & & & & \\ \hline
+  \end{tabular}
+\end{table}
+
+\subsection{Celah Penelitian}
+\label{sec:celah}
+\begin{petunjuk}
+\begin{enumerate}
+  \item Belum ada \textit{ground truth} formal berbasis \textit{taint-flow}.
+  \item Belum ada fokus pada Java SQLi.
+  \item Belum ada perbandingan SHAP/LIME/\textit{attention} dengan basis yang sama.
+\end{enumerate}
+\end{petunjuk}
+
+% ---- Ringkasan bab (0,25 hlm) ----
+\begin{petunjuk}
+Satu paragraf: benang merah antar subbab dan jembatan ke Bab III.
+\end{petunjuk}

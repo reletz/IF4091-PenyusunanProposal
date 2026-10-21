@@ -1,0 +1,56 @@
+% !TeX root = ProposalTA.tex
+\documentclass{ta-if} % Template Proposal IF4091 (Reguler Individu), Prodi Teknik Informatika STEI ITB
+
+% ==========================================
+% DATA PROPOSAL (dipakai di halaman judul & lembar pengesahan)
+% ==========================================
+\newcommand{\judulta}{Metrik \textit{Taint-Grounded} untuk Evaluasi XAI pada Deteksi SQLi Java}
+\newcommand{\namamhs}{Naufarrel Zhafif Abhista}
+\newcommand{\nimmhs}{13523149}
+
+% Pembimbing
+\newcommand{\pembimbingI}{Ir. Yudistira Dwi Wardhana Asnar, S.T, Ph.D.}
+\newcommand{\nippembimbingI}{}
+\newcommand{\pembimbingII}{Latifa Dwiyanti, S.T., M.T.}
+\newcommand{\nippembimbingII}{}
+
+\begin{document}
+% ==========================================
+% HALAMAN AWAL (FRONTMATTER)
+% ==========================================
+\frontmatter
+
+\input{1 Halaman Judul.tex}
+\input{2 Lembar Pengesahan.tex}
+\input{3 Daftar Isi.tex}
+\input{4 Daftar Gambar.tex}
+\input{5 Daftar Tabel.tex}
+\input{6 Daftar Singkatan.tex}
+\input{7 Daftar Istilah.tex}
+
+% ==========================================
+% BAGIAN UTAMA DOKUMEN
+% ==========================================
+\mainmatter
+
+\input{Bab I - Pendahuluan.tex}
+\input{Bab II - Kajian-Pustaka.tex}
+\input{Bab III - Analisis-Masalah-dan-Rancangan-Solusi.tex}
+\input{Bab IV - Rencana-Pelaksanaan.tex}
+
+% ==========================================
+% DAFTAR PUSTAKA
+% ==========================================
+\clearpage
+\makeatletter\@mainmatterfalse\makeatother
+\renewcommand{\bibname}{DAFTAR PUSTAKA}
+\bibliography{daftar-pustaka}
+\makeatletter\@mainmattertrue\makeatother
+
+% ==========================================
+% LAMPIRAN
+% ==========================================
+\mulailampiran
+\input{Lampiran-A.tex}
+
+\end{document}

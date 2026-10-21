@@ -1,0 +1,31 @@
+\clearpage
+\phantomsection
+\begin{center}
+  {\fontsize{14}{16.8}\selectfont\bfseries DAFTAR ISI}
+\end{center}
+
+{\singlespacing\setlength{\parskip}{0pt}
+  \makeatletter
+  \@starttoc{toc}
+  \makeatother
+}
+
+% Daftar Lampiran (lampiran tidak ikut di Daftar Isi)
+\needspace{6\baselineskip}
+\vspace{1em}
+\begin{center}
+  {\fontsize{14}{16.8}\selectfont\bfseries DAFTAR LAMPIRAN}
+\end{center}
+
+{\singlespacing\setlength{\parskip}{0pt}
+  \renewcommand{\cftchappresnum}{Lampiran~}
+  \renewcommand{\cftchapaftersnum}{.}
+  \settowidth{\cftchapnumwidth}{Lampiran~A.\quad}
+  \renewcommand{\cftchapfont}{\normalfont}
+  \renewcommand{\cftchappagefont}{\normalfont}
+  \renewcommand{\cftchapleader}{\cftdotfill{\cftchapdotsep}}
+  \setlength{\cftbeforechapskip}{6pt}
+  \makeatletter
+  \@starttoc{apx}
+  \makeatother
+}
