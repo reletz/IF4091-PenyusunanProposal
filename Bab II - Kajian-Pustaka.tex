@@ -1,21 +1,19 @@
 \chapter{KAJIAN PUSTAKA}
 \label{chap:kajian-pustaka}
-% Target bab: sekitar 10 halaman. Teks dalam lingkungan petunjuk adalah panduan isi; ganti dengan tulisan sendiri.
 
-% ---- Paragraf pembuka (0,25 hlm) ----
-\begin{petunjuk}
-Jelaskan bahwa bab ini membahas dasar teori dan penelitian terkait, lalu sebut urutan subbab.
-\end{petunjuk}
+Bab ini memaparkan dasar teori dan penelitian terkait yang melandasi pengembangan 
+metrik \textit{taint-grounded} untuk mengevaluasi penjelasan XAI pada deteksi \textit{SQL injection} di Java. 
+Struktur pembahasan dimulai dari kerentanannya, yakni \textit{SQL injection}, hingga ke cara menilai penjelasan 
+atas kerentanan tersebut. 
 
-% =====================================================================
-\section{\textit{SQL Injection} dan \textit{Taint Analysis}} % 2 hlm
+\section{\textit{SQL Injection} dan \textit{Taint Analysis}}
 \label{sec:sqli-taint}
 
 \subsection{\textit{SQL Injection} sebagai Kerentanan Aliran Data}
 \label{sec:sqli-aliran-data}
-\begin{petunjuk}
-Mekanisme singkat dan contoh kode Java yang rentan (\texttt{Statement.executeQuery} dengan \textit{string concatenation}), misalnya Listing~\ref{lst:sqli-rentan}.
-\end{petunjuk}
+\textit{SQL Injection} adalah sebuah kerentanan (\textit{vulnerability}) yang terjadi ketika ada
+masukan dari pengguna yang dianggap dan diperlakukan sebagai kode SQL yang valid \autocite{halfond2006}. Penyebab utama dari kerentanan
+ini adalah kurangnya validasi masukan pengguna \autocite{halfond2006}. 
 
 \begin{lstlisting}[caption={Contoh kode Java yang rentan terhadap \textit{SQL injection}}, label={lst:sqli-rentan}]
 String id = request.getParameter("id");
@@ -24,142 +22,201 @@ ResultSet rs = stmt.executeQuery(
     "SELECT * FROM users WHERE id = '" + id + "'");
 \end{lstlisting}
 
-\subsection{Konsep \textit{Taint Analysis}}
-\label{sec:konsep-taint}
-\begin{petunjuk}
-\textit{Source}, \textit{sink}, \textit{sanitizer}, propagasi, dan definisi \textit{taint-flow path}.
-\end{petunjuk}
+Pada aplikasi web, masukan tersebut umumnya berasal dari isian formulir
+yang dikirim melalui permintaan HTTP GET atau POST \autocite{halfond2006}.
+Pola yang rentan pada Java muncul ketika nilai masukan digabungkan langsung ke teks \textit{query}
+dengan \textit{string concatenation}, lalu dieksekusi, seperti pada Listing~\ref{lst:sqli-rentan}.
+Pola serupa dipakai \textcite{halfond2006} sebagai contoh implementasi \textit{servlet} yang rentan.
+Pada Listing~\ref{lst:sqli-rentan}, nilai \lstinline|id| diambil dari parameter permintaan pada baris~1,
+digabungkan ke teks \textit{query} pada baris~4,
+dan diteruskan ke \lstinline|executeQuery| pada baris~3--4.
 
-\subsection{Representasi Kode dan Perangkat Analisis}
-\label{sec:representasi-kode-tool}
-\begin{petunjuk}
-AST/CFG/CPG sekilas (hanya yang dipakai \textit{tool}), Joern/CodeQL, dan alasan pemilihan \textit{tool}.
-\end{petunjuk}
+Bila penyerang mengirim \lstinline|1' OR '1'='1| sebagai \lstinline|id|,
+\textit{query} yang terbentuk menjadi \lstinline|SELECT * FROM users WHERE id = '1' OR '1'='1'|,
+yang kondisinya selalu benar sehingga seluruh baris tabel dikembalikan.
+Serangan jenis ini dikenal sebagai tautologi,
+yaitu menyisipkan kode ke kondisi sehingga selalu bernilai benar \autocite{halfond2006}.
 
-\subsection{Keterbatasan \textit{Taint Analysis} sebagai \textit{Ground Truth}}
-\label{sec:batas-taint}
-\begin{petunjuk}
-\textit{False positive}/\textit{negative}, dan hanya menangkap sebagian alasan kerentanan.
-\end{petunjuk}
+Jika ditinjau dari aliran datanya, \textit{SQL injection} terjadi ketika masukan dari pengguna
+mengalir sampai ke perintah yang mengeksekusi \textit{query} tanpa dibersihkan terlebih dahulu.
+Pada Listing~\ref{lst:sqli-rentan}, masukan masuk melalui \lstinline|getParameter|
+dan sampai di \lstinline|executeQuery| tanpa ada validasi di antara keduanya 
+(kedua titik ini dinamai \textit{source} dan \textit{sink} pada Subbab~\ref{sec:taint-perangkat}).. Aliran
+data ini dapat ditelusuri menggunakan pendekatan analisis \textit{taint}.
+Salah satu contohnya, WebSSARI, memakai \textit{static analysis} untuk memeriksa
+apakah data \textit{tainted} sampai ke fungsi yang sensitif (misalnya yang mengeksekusi \textit{query})
+\autocite{halfond2006}.
+Berdasarkan hal tersebut, \textit{taint analysis} (Subbab~\ref{sec:taint-perangkat})
+dapat dipakai untuk menunjukkan bagian kode yang menjadi penyebab kerentanan.
 
-% =====================================================================
-\section{Deteksi Kerentanan Berbasis \textit{Machine Learning}} % 1 hlm
+\subsection{\textit{Taint Analysis} dan Perangkat Analisis}
+\label{sec:taint-perangkat}
+\textit{Taint analysis} adalah teknik untuk menelusuri perambatan (propagasi) data di dalam program \autocite{yamaguchi2015}.
+Tujuannya adalah menemukan aliran data dari \textit{source} yang dikendalikan penyerang
+menuju \textit{sink} yang sensitif tanpa melalui proses sanitasi (\textit{sanitization}) \autocite{yamaguchi2015}.
+Sanitasi adalah pembersihan atau pemeriksaan masukan sebelum dipakai,
+misalnya dengan melakukan \textit{escape}, pemeriksaan tipe, dan penyaringan \autocite{halfond2006}.
+Untuk menjalankannya, analisis harus lebih dulu menentukan \textit{source}, \textit{sink}, dan aturan sanitasi yang berlaku \autocite{yamaguchi2015}.
+
+Pada Listing~\ref{lst:sqli-rentan}, \lstinline|getParameter| berperan sebagai \textit{source}
+dan \lstinline|executeQuery| sebagai \textit{sink}, tanpa ada sanitasi di antara keduanya.
+Kerentanan dengan pola seperti ini disebut kerentanan bergaya \textit{taint} (\textit{taint-style vulnerabilities}),
+dan \textit{SQL injection} termasuk di dalamnya \autocite{yamaguchi2015}.
+Pada proposal ini, lintasan aliran data dari \textit{source} ke \textit{sink} tersebut disebut \textit{taint-flow path}.
+
+\textcite{yamaguchi2014} menyatakan bahwa banyak kerentanan hanya dapat ditemukan
+dengan memperhatikan struktur, aliran kendali, dan ketergantungan kode secara bersamaan.
+Untuk itu, mereka memperkenalkan \textit{code property graph} (CPG),
+yaitu graf yang menggabungkan tiga representasi klasik dalam satu struktur data \autocite{yamaguchi2014}:
+\begin{itemize}
+  \item \textit{Abstract syntax tree} (AST), yang menunjukkan bagaimana pernyataan dan ekspresi saling bersarang membentuk program \autocite{yamaguchi2014}.
+  \item \textit{Control flow graph} (CFG), yang menggambarkan urutan eksekusi pernyataan beserta kondisi yang harus dipenuhi untuk menempuh suatu jalur \autocite{yamaguchi2014}.
+  \item \textit{Program dependence graph} (PDG), yang memuat ketergantungan data (pengaruh satu variabel terhadap variabel lain)
+  dan ketergantungan kendali (pengaruh kondisi terhadap nilai variabel) \autocite{yamaguchi2014}.
+\end{itemize}
+
+Dengan CPG, pencarian aliran data tanpa sanitasi dapat dinyatakan sebagai penelusuran (\textit{traversal}) pada graf \autocite{yamaguchi2015}.
+Salah satu perangkat yang menerapkan CPG adalah Joern, yaitu platform analisis kode \textit{open source} \autocite{bakereffendi2025}.
+Melalui \textit{language frontend}-nya, Joern menghasilkan AST, CFG, dan \textit{control dependence graph} (CDG) terpadu yang membentuk CPG hampir lengkap \autocite{bakereffendi2025}.
+Implementasi awal CPG memakai \textit{parser} C/C++ \autocite{yamaguchi2014},
+sedangkan efisiensi analisis aliran data pada Joern kini telah dievaluasi pada program Java, Python, dan JavaScript \autocite{bakereffendi2025}.
+Sebagai pembanding, \textcite{bakereffendi2025} menggunakan Semgrep dan CodeQL,
+yaitu perangkat analisis statis yang luas dipakai, mendukung analisis \textit{taint} multi-bahasa, dan dapat menganalisis program parsial \autocite{bakereffendi2025}.
+
+% \subsection{Keterbatasan \textit{Taint Analysis} sebagai \textit{Ground Truth}}
+% \label{sec:batas-taint}
+
+\section{Deteksi Kerentanan Berbasis \textit{Machine Learning}}
 \label{sec:deteksi-ml}
+Model \textit{machine learning} memerlukan kode sumber dalam bentuk representasi vektor sebagai masukan \autocite{ganz2023}.
+Salah satu caranya adalah memperlakukan kode seperti teks,
+yaitu pernyataan dianggap sebagai kalimat, sedangkan kata kunci dan literal dianggap sebagai kata \autocite{ganz2023}.
+Cara lain adalah memodelkan kode sebagai graf yang dapat menangkap hubungan sintaktis dan semantik antarpernyataan dan ekspresi \autocite{ganz2023}.
+\textcite{luo2022} menyatakan bahwa representasi kode sangat penting bagi pendekatan deteksi kerentanan berbasis \textit{machine learning}.
+Graf ringkas yang mereka usulkan (\textit{compact abstract graphs}) menghasilkan model GNN yang secara signifikan lebih baik daripada AST, CFG, dan PDG,
+dengan akurasi 94,7\% sampai 96,3\% pada dataset Java berisi 114 jenis kerentanan \autocite{luo2022}.
 
-\subsection{Representasi Kode untuk Model ML}
-\label{sec:representasi-ml}
-\begin{petunjuk}
-\textit{Token} vs graf, dan mana yang dipakai.
-\end{petunjuk}
+Dari sisi model, CodeBERT adalah model \textit{pre-trained} bimodal untuk bahasa pemrograman dan bahasa alami
+yang dibangun dengan arsitektur \textit{Transformer} \autocite{feng2020}.
 
-\subsection{Model Detektor}
-\label{sec:model-detektor}
-\begin{petunjuk}
-Model yang dipilih (misal CodeBERT) dan alasannya.
-\end{petunjuk}
+Meskipun metode deteksi berbasis \textit{deep learning} menunjukkan performa kuat pada dataset \textit{benchmark},
+efektivitasnya di dunia nyata masih kurang dieksplorasi \autocite{lu2025}.
+Dataset \textit{benchmark} umumnya memiliki distribusi data yang mirip dan dapat memuat sampel sintetis, label heuristik, atau label yang mengandung derau (\textit{noise}) \autocite{lu2025}.
+\textcite{lu2025} menemukan bahwa model yang dilatih pada satu dataset menggeneralisasi dengan buruk ke dataset dengan distribusi berbeda.
+Juliet milik NIST, misalnya, digambarkan sebagai dataset sintetis berukuran besar yang berisi potongan kode C/C++ berlabel \autocite{lu2025}.
 
-\subsection{\textit{Dataset} Kerentanan Java}
-\label{sec:dataset}
-\begin{petunjuk}
-Juliet/SARD, OWASP Benchmark, dsb. Label SQLi, keterbatasan, dan metrik performa model (F1, dll.).
-\end{petunjuk}
-
-% =====================================================================
-\section{\textit{Explainable AI} untuk Model Kode} % 2 hlm
+\section{\textit{Explainable AI} untuk Model Kode}
 \label{sec:xai}
 
 \subsection{Konsep Dasar XAI}
-\label{sec:konsep-xai}
-\begin{petunjuk}
-\textit{Black box}, \textit{post-hoc} vs \textit{intrinsic}, \textit{local} vs \textit{global}.
-\end{petunjuk}
+\label{sec:konsep-xai-token}
+Model AI yang kompleks mengambil keputusan tanpa memberikan penjelasan yang jelas,
+yang dikenal sebagai masalah \textit{black-box} \autocite{arora2025}.
+\textit{Explainable AI} (XAI) hadir untuk membuat sistem AI lebih mudah ditafsirkan dan transparan,
+sehingga pemangku kepentingan dapat mempercayai, memverifikasi, dan bertindak berdasarkan hasilnya \autocite{arora2025}.
 
-\subsection{SHAP}
-\label{sec:shap}
-\begin{petunjuk}
-Nilai Shapley, cara kerja, kelebihan, dan kelemahan.
-\end{petunjuk}
+Pemahaman terhadap model dapat dicapai melalui dua jalur.
+Jalur pertama adalah memakai model yang secara inheren dapat ditafsirkan (\textit{intrinsic}),
+yang juga disebut model \textit{self-explaining} \autocite{hajimohammadkhani2023}.
+Model jenis ini sering menghadapi \textit{trade-off} antara akurasi dan interpretabilitas \autocite{hajimohammadkhani2023}.
+Jalur kedua adalah pendekatan \textit{post-hoc}, yang memperkirakan model \textit{black-box}
+dengan model pengganti (\textit{surrogate}) yang transparan tanpa mengubah model dasarnya \autocite{hajimohammadkhani2023}.
+LIME dan SHAP termasuk di antara metode \textit{post-hoc} yang paling umum \autocite{hajimohammadkhani2023}.
 
-\subsection{LIME}
-\label{sec:lime}
-\begin{petunjuk}
-\textit{Surrogate} lokal berbasis perturbasi, kelebihan, dan kelemahan.
-\end{petunjuk}
+Berdasarkan cakupannya, penjelasan dibedakan menjadi lokal dan global.
+Interpretabilitas lokal meninjau satu instans dan menjelaskan bagaimana prediksi untuk instans tersebut berkaitan dengan fitur-fiturnya \autocite{hajimohammadkhani2023}.
+Interpretabilitas global memahami bagaimana model mengambil keputusan berdasarkan seluruh fitur, parameter, dan strukturnya \autocite{hajimohammadkhani2023}.
+
+Alat interpretabilitas yang dikaji pada model kode bekerja pada level \textit{token} masukan \autocite{steenhoek2023}.
+Misalnya, \textcite{pintore2025} menghitung skor relevansi untuk setiap \textit{token} pada tiap baris
+dengan skor \textit{attention}, AttnLRP, atau \textit{integrated gradients}.
+Akibatnya, penjelasan level \textit{token} tidak dapat dibandingkan langsung dengan fitur \textit{bug} yang ditandai pada level \textit{token} AST \autocite{steenhoek2023},
+dan cara terbaik menghitung cakupannya pada penjelasan berbasis sekuens masih menjadi pertanyaan terbuka \autocite{cheng2024}.
+Masalah pemetaan ini dibahas pada Subbab~\ref{sec:evaluasi-xai}.
+
+\subsection{SHAP dan LIME}
+\label{sec:shap-lime}
+SHAP (\textit{SHapley Additive exPlanations}) memberi setiap fitur sebuah nilai kepentingan untuk satu prediksi tertentu \autocite{lundberg2017}.
+Nilai Shapley dihitung sebagai rata-rata berbobot dari selisih keluaran model
+untuk semua kemungkinan subset fitur \autocite{lundberg2017}.
+Kelebihannya, \textcite{lundberg2017} menunjukkan bahwa pada kelas ukuran kepentingan fitur aditif
+terdapat satu solusi unik yang memiliki sejumlah properti yang diinginkan.
+Perhitungan klasik melibatkan semua subset fitur;
+untuk itu tersedia metode perkiraan seperti \textit{Shapley sampling values} dan \textit{Kernel SHAP},
+dan metode yang terakhir memerlukan evaluasi model lebih sedikit untuk akurasi perkiraan yang serupa \autocite{lundberg2017}.
+
+LIME menjelaskan prediksi pengklasifikasi apa pun
+dengan mempelajari model yang dapat ditafsirkan secara lokal di sekitar prediksi tersebut \autocite{ribeiro2016}.
+Penjelasannya difokuskan pada model linear jarang (\textit{sparse linear model}) yang dicari dengan perturbasi \autocite{ribeiro2016}.
+LIME termasuk penjelasan \textit{post-hoc} berbasis perturbasi yang banyak dipakai \autocite{zhou2021}.
+Namun, metode berbasis perturbasi ini dilaporkan menunjukkan ketidakstabilan yang besar,
+yang mengganggu efektivitas metode dan kepercayaan pengguna \autocite{zhou2021}.
+\textcite{ribeiro2016} sendiri menyebut jumlah sampel yang tepat dan optimasi komputasi sebagai pekerjaan lanjutan.
 
 \subsection{\textit{Attention} sebagai Penjelasan}
 \label{sec:attention}
-\begin{petunjuk}
-Cara kerja di \textit{Transformer} dan perdebatan ``\textit{attention} bukan penjelasan''.
-\end{petunjuk}
+Mekanisme \textit{attention} menghasilkan distribusi bobot atas unit masukan yang diperhatikan model,
+dan distribusi ini sering dipandang, setidaknya secara implisit, sebagai petunjuk kepentingan relatif masukan \autocite{jain2019}.
+\textit{Attention map} juga termasuk keluaran tambahan yang dapat dihasilkan model yang secara intrinsik dapat ditafsirkan \autocite{hajimohammadkhani2023}.
+Pada model kode, LineVul yang berbasis CodeBERT menghasilkan penjelasan level baris dari \textit{self-attention} \autocite{steenhoek2023}.
 
-\subsection{Penjelasan pada Level \textit{Token} untuk Kode}
-\label{sec:xai-token}
-\begin{petunjuk}
-Bagaimana ketiga metode menghasilkan skor per \textit{token} (jembatan ke masalah pemetaan di Subbab~\ref{sec:evaluasi-xai}).
-\end{petunjuk}
+\textcite{jain2019} menemukan bahwa bobot \textit{attention} sering tidak berkorelasi dengan ukuran kepentingan fitur berbasis gradien,
+dan ada distribusi \textit{attention} yang sangat berbeda tetapi menghasilkan prediksi yang setara.
+Mereka menyimpulkan bahwa modul \textit{attention} standar tidak memberikan penjelasan yang bermakna
+dan tidak seharusnya diperlakukan seolah-olah demikian \autocite{jain2019}.
+\textcite{wiegreffe2019} berpendapat bahwa Jain dan Wallace mengajukan pertanyaan yang penting,
+tetapi beberapa asumsi pada desain eksperimennya memberi kebebasan yang terlalu besar,
+sehingga praktisi tidak memiliki cara terapan untuk mengukur kegunaan distribusi \textit{attention} pada kasus tertentu \autocite{wiegreffe2019}.
+Perdebatan ini menunjukkan bahwa nilai \textit{attention} sebagai penjelasan perlu diuji, bukan diasumsikan.
 
-% =====================================================================
-\section{Evaluasi Penjelasan XAI} % 2,5 hlm
+\section{Evaluasi Penjelasan XAI}
 \label{sec:evaluasi-xai}
 
-\subsection{\textit{Faithfulness} dan \textit{Plausibility}}
-\label{sec:faithfulness}
-\begin{petunjuk}
-\textit{Comprehensiveness}, \textit{sufficiency}; kenapa penjelasan yang tampak masuk akal belum tentu setia pada model (motivasi riset).
-\end{petunjuk}
+% \subsection{\textit{Faithfulness} dan \textit{Plausibility}}
+% \label{sec:faithfulness}
+% \begin{petunjuk}
+% \textit{Comprehensiveness}, \textit{sufficiency}; kenapa penjelasan yang tampak masuk akal belum tentu setia pada model (motivasi riset).
+% \end{petunjuk}
 
-\subsection{Konsistensi dan Stabilitas}
-\label{sec:stabilitas}
-\begin{petunjuk}
-Kestabilan penjelasan terhadap perubahan input yang tidak mengubah semantik.
-\end{petunjuk}
-
-\subsection{Evaluasi Berbasis \textit{Ground Truth}}
-\label{sec:eval-ground-truth}
-\begin{petunjuk}
-ERASER dan \textit{rationale} manusia vs \textit{taint-flow} yang deterministik.
-\end{petunjuk}
-
-\subsection{Evaluasi Penjelasan pada Kode}
-\label{sec:eval-kode}
-\begin{petunjuk}
-Level \textit{token}, baris, \textit{statement}; masalah pemetaan skor \textit{token} ke \textit{taint path}.
-\end{petunjuk}
+% \subsection{\textit{Ground Truth} dan Evaluasi Penjelasan pada Kode}
+% \label{sec:eval-ground-truth-kode}
+% \begin{petunjuk}
+% ERASER dan \textit{rationale} manusia vs \textit{taint-flow} yang deterministik. Evaluasi pada level \textit{token}, baris, dan \textit{statement}; masalah pemetaan skor \textit{token} ke \textit{taint path}.
+% \end{petunjuk}
 
 \subsection{Keterbatasan Metrik yang Ada untuk Domain Kode}
 \label{sec:batas-metrik}
 
-% =====================================================================
-\section{Penelitian Terkait dan Celah Penelitian} % 2,25 hlm
+\section{Penelitian Terkait dan Celah Penelitian}
 \label{sec:penelitian-terkait}
 
-\subsection{XAI untuk Deteksi Kerentanan Kode}
-\label{sec:xai-vuln}
-\begin{petunjuk}
-Karya terdekat: apa yang dijelaskan dan bagaimana dievaluasi.
-\end{petunjuk}
+% \subsection{XAI untuk Deteksi Kerentanan Kode}
+% \label{sec:xai-vuln}
+% \begin{petunjuk}
+% Karya terdekat: apa yang dijelaskan dan bagaimana dievaluasi.
+% \end{petunjuk}
 
-\subsection{Tabel Perbandingan Penelitian Terkait}
-\label{sec:tabel-perbandingan}
-\begin{petunjuk}
-Bandingkan 5--8 karya, seperti pada Tabel~\ref{tab:perbandingan}.
-\end{petunjuk}
+% \subsection{Tabel Perbandingan Penelitian Terkait}
+% \label{sec:tabel-perbandingan}
+% \begin{petunjuk}
+% Bandingkan 5--8 karya, seperti pada Tabel~\ref{tab:perbandingan}.
+% \end{petunjuk}
 
-\begin{table}[htbp]
-  \caption{Perbandingan penelitian terkait}
-  \label{tab:perbandingan}
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \renewcommand{\arraystretch}{1.2}
-  \begin{tabular}{|p{2.2cm}|p{0.9cm}|p{1.9cm}|p{1.3cm}|p{1.5cm}|p{1.9cm}|p{2.5cm}|}
-    \hline
-    \textbf{Judul} & \textbf{Tahun} & \textbf{Bahasa/\newline Kerentanan} & \textbf{Model} & \textbf{Metode\newline XAI} & \textbf{Metrik\newline Evaluasi} & \textbf{Keterbatasan} \\
-    \hline
-    & & & & & & \\ \hline
-    & & & & & & \\ \hline
-    & & & & & & \\ \hline
-  \end{tabular}
-\end{table}
+% \begin{table}[htbp]
+%   \caption{Perbandingan penelitian terkait}
+%   \label{tab:perbandingan}
+%   \scriptsize
+%   \setlength{\tabcolsep}{3pt}
+%   \renewcommand{\arraystretch}{1.2}
+%   \begin{tabular}{|p{2.2cm}|p{0.9cm}|p{1.9cm}|p{1.3cm}|p{1.5cm}|p{1.9cm}|p{2.5cm}|}
+%     \hline
+%     \textbf{Judul} & \textbf{Tahun} & \textbf{Bahasa/\newline Kerentanan} & \textbf{Model} & \textbf{Metode\newline XAI} & \textbf{Metrik\newline Evaluasi} & \textbf{Keterbatasan} \\
+%     \hline
+%     & & & & & & \\ \hline
+%     & & & & & & \\ \hline
+%     & & & & & & \\ \hline
+%   \end{tabular}
+% \end{table}
 
 \subsection{Celah Penelitian}
 \label{sec:celah}
@@ -171,7 +228,6 @@ Bandingkan 5--8 karya, seperti pada Tabel~\ref{tab:perbandingan}.
 \end{enumerate}
 \end{petunjuk}
 
-% ---- Ringkasan bab (0,25 hlm) ----
-\begin{petunjuk}
-Satu paragraf: benang merah antar subbab dan jembatan ke Bab III.
-\end{petunjuk}
+% \begin{petunjuk}
+% Satu paragraf: benang merah antar subbab dan jembatan ke Bab III.
+% \end{petunjuk}

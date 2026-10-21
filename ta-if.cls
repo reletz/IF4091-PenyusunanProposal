@@ -26,6 +26,7 @@
 \RequirePackage{amssymb} % for math symbols
 \RequirePackage[shortlabels]{enumitem} % for customizing lists
 \RequirePackage[skip=12pt]{parskip} % for spacing between paragraphs
+\RequirePackage{indentfirst} % paragraf pertama setelah judul bab/subbab juga diindentasi
 \RequirePackage{longtable} % for long tables
 \RequirePackage{booktabs} % for better table rules
 \RequirePackage[bahasai]{datetime2} % for date formatting in Indonesian
@@ -43,6 +44,9 @@
 \RequirePackage[hidelinks]{hyperref} % for hyperlinks
 
 \onehalfspacing % spasi 1.5
+
+% pola pemenggalan Indonesia salah memotong "subbab" menjadi "su-bbab"
+\hyphenation{sub-bab sub-sub-bab}
 
 % --- Bibliography: BibTeX + apacite (gaya APA), tanpa biber ---
 \RequirePackage{apacite}
@@ -97,7 +101,8 @@
     showstringspaces=false,
     showtabs=false,
     tabsize=4,
-    language=Java
+    language=Java,
+    upquote=true
 }
 \lstset{style=javastyle}
 
@@ -197,8 +202,8 @@
   capposition=top
 }
 
-% --- Atur indentasi paragraf ---
-\setlength{\parindent}{0pt}
+% --- Atur indentasi paragraf (baris pertama menjorok 1 cm, termasuk paragraf pertama setelah judul) ---
+\setlength{\parindent}{1cm}
 \setlength{\parskip}{12pt plus 2pt minus 1pt}
 
 \setlist[enumerate,itemize]{noitemsep, topsep=4pt, parsep=0pt, partopsep=0pt}
