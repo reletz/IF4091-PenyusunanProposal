@@ -1,2 +1,3 @@
 /build/*
+/article/**/*.pdf
 !/build/ProposalTA.pdf
