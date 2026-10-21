@@ -65,8 +65,7 @@
 % -- No Header, nomor halaman di tengah bawah ---
 \pagestyle{plain}
 
-% --- Teks petunjuk dari template Word (warna biru); hapus/ganti dengan isi sendiri ---
-\definecolor{petunjuk}{HTML}{000000} % ganti ke 548DD4 untuk mewarnai biru lagi
+\definecolor{petunjuk}{HTML}{548DD4}
 \newenvironment{petunjuk}{\color{petunjuk}}{}
 \newcommand{\isi}[1]{{\color{petunjuk}#1}}
 
