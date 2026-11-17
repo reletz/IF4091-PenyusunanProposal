@@ -1,4 +1,3 @@
 /build/*
-/article/**/*.pdf
 /.obsidian
 !/build/ProposalTA.pdf
