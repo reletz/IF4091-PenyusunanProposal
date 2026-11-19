@@ -1,3 +1,5 @@
 /build/*
 /.obsidian
 !/build/ProposalTA.pdf
+uv.lock
+pyproject.toml
